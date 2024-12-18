@@ -7,6 +7,7 @@ import { connectDB } from './config/db';
 import { authRoutes } from './routes/auth.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { logger } from './utils/logger';
+import { commitmentRoutes } from './routes/commitment.routes';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/commitments', commitmentRoutes);
 
 // Error handling
 app.use(errorHandler);

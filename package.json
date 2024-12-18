@@ -16,7 +16,13 @@
     "jsonwebtoken": "^9.0.2",
     "dotenv": "^16.3.1",
     "cors": "^2.8.5",
-    "express-validator": "^7.0.1"
+    "express-validator": "^7.0.1",
+    "bip32": "^5.0.0-rc.0",
+    "bip39": "^3.1.0",
+    "crypto": "^1.0.1",
+    "elliptic": "^6.6.1",
+    "ethers": "^6.13.4",
+    "tiny-secp256k1": "^2.2.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.3",

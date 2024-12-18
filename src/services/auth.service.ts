@@ -17,7 +17,7 @@ export class AuthService {
     return jwt.sign({ user: { id: userId } }, process.env.JWT_SECRET, { expiresIn: '1h' });
   }
 
-  static async createUser(username: string, email: string, password: string): Promise<UserDocument> {
+  static async createUser(username: string, email: string, password: string, xpubkey: string): Promise<UserDocument> {
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       throw new AuthError('User already exists');
@@ -27,7 +27,8 @@ export class AuthService {
     const user = new User({
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      xpubkey
     });
 
     return user.save();
