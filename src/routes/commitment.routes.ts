@@ -13,41 +13,47 @@ const createCommitmentValidation = [
   check('assetPayload.unit', 'Unit is required').not().isEmpty()
 ];
 
-const signCommitmentValidation = [
+const acceptCommitmentValidation = [
   check('commitmentId', 'Commitment ID is required').not().isEmpty(),
   check('mnemonic', 'mnemonic is required').not().isEmpty()
 ];
 
+router.use(authMiddleware)
+
 router.post(
-  '/create', 
-  authMiddleware, 
-  createCommitmentValidation, 
+  '/create',
+  createCommitmentValidation,
   CommitmentController.createCommitment
 );
 
 router.post(
-  '/sign', 
-  authMiddleware, 
-  signCommitmentValidation, 
-  CommitmentController.signCommitment
-);
-
-router.get(
-  '/my-commitments', 
-  authMiddleware, 
-  CommitmentController.getUserCommitments
-);
-
-router.get(
-  '/:id', 
-  authMiddleware, 
-  CommitmentController.getCommitmentById
+  '/accept',
+  acceptCommitmentValidation,
+  CommitmentController.acceptCommitment
 );
 
 router.post(
-  '/discharge', 
-  authMiddleware, 
+  '/acknowledge',
+  CommitmentController.acknowledgeCommitment
+);
+
+router.post(
+  '/discharge',
   CommitmentController.dischargeCommitment
 );
+
+
+// router.get(
+//   '/my-commitments', 
+//   authMiddleware, 
+//   CommitmentController.getUserCommitments
+// );
+
+// router.get(
+//   '/:id', 
+//   authMiddleware, 
+//   CommitmentController.getCommitmentById
+// );
+
 
 export const commitmentRoutes = router;

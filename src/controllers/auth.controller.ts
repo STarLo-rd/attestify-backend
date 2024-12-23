@@ -4,7 +4,7 @@ import { AuthService } from "../services/auth.service";
 import { catchAsync } from "../utils/catchAsync";
 import { AuthError } from "../utils/errors";
 import { User } from "../models/User";
-import { deriveXpubKey } from "../utils/lib";
+import { deriveXpubKey } from "../utils/xpubservice";
 
 export class AuthController {
   static register = catchAsync(async (req: Request, res: Response) => {

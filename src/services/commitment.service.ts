@@ -1,28 +1,32 @@
+import { uuidV4 } from "ethers";
 import { Commitment, ICommitment } from "../models/Commitment";
 import { User } from "../models/User";
 import { AuthError } from "../utils/errors";
-import { deriveCommitmentXpubKey } from "../utils/lib";
+// import { deriveCommitmentXpubKey } from "../utils/lib";
 
 export class CommitmentService {
   static async createCommitment(
-    creatorId: string,
+    commitmentId: Number,
+    committeeId: string,
     committerId: string,
-    assetPayload: ICommitment['assetPayload']
+    assetPayload: ICommitment["assetPayload"],
+    status: string
   ) {
     // Validate both users exist
-    const creator = await User.findById(creatorId);
+    const committee = await User.findById(committeeId);
     const committer = await User.findById(committerId);
 
-    if (!creator || !committer) {
-      throw new AuthError("Invalid creator or committer", 400);
+    if (!committee || !committer) {
+      throw new AuthError("Invalid committee or committer", 400);
     }
 
     // Check for duplicate commitment
     const existingCommitment = await Commitment.findOne({
-      creator: creatorId,
+      commitmentId: commitmentId,
+      committee: committeeId,
       committer: committerId,
-      'assetPayload.assetName': assetPayload.assetName,
-      'assetPayload.quantity': assetPayload.quantity
+      "assetPayload.assetName": assetPayload.assetName,
+      "assetPayload.quantity": assetPayload.quantity,
     });
 
     if (existingCommitment) {
@@ -31,10 +35,12 @@ export class CommitmentService {
 
     // Create commitment
     const commitment = new Commitment({
-      creator: creatorId,
+      commitmentId: commitmentId,
+      committee: committeeId,
       committer: committerId,
       assetPayload,
-      status: 'INITIATED'
+      status,
+      // commitmentId: uuidV4();
     });
 
     await commitment.save();
@@ -42,63 +48,42 @@ export class CommitmentService {
     return commitment;
   }
 
-  static async signCommitment(
-    commitmentId: string,
-    userId: string,
-    signature: string
-  ) {
-    const commitment = await Commitment.findById(commitmentId);
-
-    if (!commitment) {
-      throw new AuthError("Commitment not found", 404);
+  static async updateCommitment(commitmentId: string, updates: Partial<ICommitment>) {
+    // Update the commitment in the database directly
+    const updatedCommitment = await Commitment.findByIdAndUpdate(
+      commitmentId,
+      { ...updates, updatedAt: new Date() }, // Include updatedAt to keep the record fresh
+      { new: true } // Return the updated document
+    );
+  
+    if (!updatedCommitment) {
+      throw new Error("Commitment not found");
     }
-
-    // Check if user is either creator or committer
-    const isCreator = commitment.creator.toString() === userId;
-    const isCommitter = commitment.committer.toString() === userId;
-
-    if (!isCreator && !isCommitter) {
-      throw new AuthError("Unauthorized to sign this commitment", 403);
-    }
-
-    // Update signature based on user role
-    if (isCreator) {
-      commitment.committeeSignature = signature;
-    } else {
-      commitment.committerSignature = signature;
-    }
-
-    // Update status if both signatures are present
-    if (commitment.committeeSignature && commitment.committerSignature) {
-      commitment.status = 'ACKNOWLEDGED';
-    }
-
-    await commitment.save();
-
-    return commitment;
+  
+    return updatedCommitment;
   }
+  
+  
 
   static async getUserCommitments(userId: string) {
     return Commitment.find({
-      $or: [{ creator: userId }, { committer: userId }]
-    }).populate('creator', 'username email')
-      .populate('committer', 'username email');
+      $or: [{ committee: userId }, { committer: userId }],
+    })
+      .populate("committee", "username email")
+      .populate("committer", "username email");
   }
 
-  static async getCommitmentById(
-    commitmentId: string, 
-    userId: string
-  ) {
+  static async getCommitmentById(commitmentId: string, userId: string) {
     const commitment = await Commitment.findById(commitmentId)
-      .populate('creator', 'username email')
-      .populate('committer', 'username email');
+      .populate("committee", "username email")
+      .populate("committer", "username email");
 
     if (!commitment) {
       throw new AuthError("Commitment not found", 404);
     }
 
-    // Ensure user is either creator or committer
-    const isCreator = commitment.creator._id.toString() === userId;
+    // Ensure user is either committee or committer
+    const isCreator = commitment.committee._id.toString() === userId;
     const isCommitter = commitment.committer._id.toString() === userId;
 
     if (!isCreator && !isCommitter) {
@@ -108,33 +93,5 @@ export class CommitmentService {
     return commitment;
   }
 
-  static async dischargeCommitment(
-    commitmentId: string, 
-    userId: string
-  ) {
-    const commitment = await Commitment.findById(commitmentId);
-
-    if (!commitment) {
-      throw new AuthError("Commitment not found", 404);
-    }
-
-    // Validate signatures and user
-    if (!commitment.committeeSignature || !commitment.committerSignature) {
-      throw new AuthError("Cannot discharge: Missing signatures", 400);
-    }
-
-    // Ensure user is either creator or committer
-    const isCreator = commitment.creator.toString() === userId;
-    const isCommitter = commitment.committer.toString() === userId;
-
-    if (!isCreator && !isCommitter) {
-      throw new AuthError("Unauthorized to discharge this commitment", 403);
-    }
-
-    // Update status
-    commitment.status = 'DISCHARGED';
-    await commitment.save();
-
-    return commitment;
-  }
+ 
 }
