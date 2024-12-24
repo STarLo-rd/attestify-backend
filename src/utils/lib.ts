@@ -86,11 +86,11 @@ export class Attestify {
     parentXpub: string,
     commitmentId: Number
   ): string {
-    console.log("commitmentId", commitmentId)
-    console.log("commitmentId", this.payload.commitmentId)
-
+     // Ensure we use a non-hardened index (less than 2^31)
+     const nonHardenedIndex = commitmentId >>> 0; // Convert to unsigned 32-bit
+     const index = nonHardenedIndex % 0x80000000; // Ensure it's below 2^31
     const parentNode = bip32.fromBase58(parentXpub);
-    const childNode = parentNode.derive(commitmentId);
+    const childNode = parentNode.derive(index);
     return childNode.neutered().toBase58();
   }
 
@@ -115,16 +115,19 @@ export class Attestify {
     return { ...this.payload };
   }
 
-  public acknowledge(mnemonic: string): CommitmentPayload {
+  public acknowledge(mnemonic: string, xpubkey:string): CommitmentPayload {
     if (this.payload.status !== CommitmentStatus.ACCEPTED) {
       throw new Error("Commitment must be in ACCEPTED status to acknowledge");
     }
+
+    const derivedCommitteeXpubkey = this.deriveCommitmentXpubKey(xpubkey, this.payload.commitmentId)
 
     const signature = this.sign(mnemonic);
 
     this.payload = {
       ...this.payload,
       committeeSignature: signature,
+      committeeXpubKey: derivedCommitteeXpubkey,
       status: CommitmentStatus.ACKNOWLEDGED,
       updatedAt: new Date(),
     };
@@ -137,9 +140,9 @@ export class Attestify {
       throw new Error("Commitment must be in ACKNOWLEDGED status to discharge");
     }
 
-    if (this.payload.committee !== committeeId) {
-      throw new Error("Only the committee can discharge the commitment");
-    }
+    // if (this.payload.committee !== committeeId) {
+    //   throw new Error("Only the committee can discharge the commitment");
+    // }
 
     const dischargeMessage = {
       commitmentId: this.payload._id,

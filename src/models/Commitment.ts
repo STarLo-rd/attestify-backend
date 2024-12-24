@@ -13,13 +13,15 @@ export interface IAssetPayload {
 }
 
 export interface ICommitment {
-  commitmentId: Number,
+  commitmentId: Number;
   committee: Types.ObjectId;
   committer: Types.ObjectId;
   assetPayload: IAssetPayload;
   status: CommitmentStatus;
   committeeSignature?: string;
   committerSignature?: string;
+  committeeXpubKey?: string;
+  committerXpubKey?: string;
   commitmentXpubkey?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -74,7 +76,11 @@ const commitmentSchema = new Schema<CommitmentDocument>(
       type: String,
       trim: true,
     },
-    commitmentXpubkey: {
+    committeeXpubKey: {
+      type: String,
+      trim: true,
+    },
+    committerXpubKey: {
       type: String,
       trim: true,
     },
