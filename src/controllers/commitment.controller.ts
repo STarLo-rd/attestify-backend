@@ -5,7 +5,7 @@ import { catchAsync } from "../utils/catchAsync";
 import { AuthError } from "../utils/errors";
 import { Commitment } from "../models/Commitment";
 import { User } from "../models/User";
-import { Attestation, Attest, SignatureService } from "attestify";
+import { Attestation } from "attestify";
 
 export class CommitmentController {
   static createCommitment = catchAsync(

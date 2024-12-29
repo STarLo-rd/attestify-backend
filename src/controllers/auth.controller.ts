@@ -36,7 +36,7 @@ export class AuthController {
     const user = await AuthService.validateUser(email, password);
     const token = AuthService.generateToken(user.id);
 
-    res.json({ token });
+    res.json({ token, id: user._id, xpubkey: user.xpubkey });
   });
 
   static getProfile = catchAsync(async (req: Request, res: Response) => {

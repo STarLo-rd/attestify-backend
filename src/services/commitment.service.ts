@@ -1,4 +1,3 @@
-import { uuidV4 } from "ethers";
 import { Commitment, ICommitment } from "../models/Commitment";
 import { User } from "../models/User";
 import { AuthError } from "../utils/errors";
