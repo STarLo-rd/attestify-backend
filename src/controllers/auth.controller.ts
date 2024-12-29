@@ -4,7 +4,7 @@ import { AuthService } from "../services/auth.service";
 import { catchAsync } from "../utils/catchAsync";
 import { AuthError } from "../utils/errors";
 import { User } from "../models/User";
-import { deriveXpubKey } from "../utils/xpubservice";
+import { generateXpubkey } from "attestify";
 
 export class AuthController {
   static register = catchAsync(async (req: Request, res: Response) => {
@@ -13,7 +13,7 @@ export class AuthController {
       throw new AuthError("Validation error", 400, errors.array());
     }
     const { username, email, password, mnemonic } = req.body;
-    let userXpubKey = deriveXpubKey(mnemonic);
+    let userXpubKey = generateXpubkey(mnemonic, "m/44'/60'/0'/0");
 
     const user = await AuthService.createUser(
       username,

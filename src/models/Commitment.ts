@@ -1,72 +1,49 @@
 import { Schema, model, Document, Types } from "mongoose";
 
+// Define CommitmentStatus type
 export type CommitmentStatus =
-  | "CREATED"
+  | "INITIATED"
   | "ACCEPTED"
   | "ACKNOWLEDGED"
   | "DISCHARGED";
 
-export interface IAssetPayload {
-  assetName: string;
-  quantity: number;
-  unit: string;
-}
-
-export interface ICommitment {
-  commitmentId: Number;
-  committee: Types.ObjectId;
-  committer: Types.ObjectId;
-  assetPayload: IAssetPayload;
-  status: CommitmentStatus;
+// Define ICommitment interface
+export interface ICommitment extends Document {
+  commitmentId: Types.ObjectId; //   committeeId: Types.ObjectId;
+  committeeId: Types.ObjectId;
+  committerId: Types.ObjectId;
   committeeSignature?: string;
   committerSignature?: string;
-  committeeXpubKey?: string;
-  committerXpubKey?: string;
-  commitmentXpubkey?: string;
+  dischargeSignature?: string;
+  committeeXpub?: string;
+  committerXpub?: string;
+  attestationPayload: string; // Now stringified
+  derivationPath: string;
+  attestationId: string;
+  committer: string;
+  committee: string;
+  commitmentState: CommitmentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface CommitmentDocument extends Document, ICommitment {}
-
-const commitmentSchema = new Schema<CommitmentDocument>(
+// Schema definition
+const commitmentSchema = new Schema<ICommitment>(
   {
     commitmentId: {
-      type: Number,
+      type: Schema.Types.ObjectId, // Automatically assigns ObjectId
+      default: () => new Types.ObjectId(), // Automatically initialize when created
       required: true,
     },
-    committee: {
+    committeeId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: [true, "Committee ID is required."],
     },
-    committer: {
+    committerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-    },
-    assetPayload: {
-      assetName: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      quantity: {
-        type: Number,
-        required: true,
-        min: 0,
-      },
-      unit: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-    },
-    status: {
-      type: String,
-      enum: ["CREATED", "ACCEPTED", "ACKNOWLEDGED", "DISCHARGED"],
-      default: "CREATED",
-      required: true,
+      required: [true, "Committer ID is required."],
     },
     committeeSignature: {
       type: String,
@@ -76,13 +53,52 @@ const commitmentSchema = new Schema<CommitmentDocument>(
       type: String,
       trim: true,
     },
-    committeeXpubKey: {
+    dischargeSignature: {
       type: String,
       trim: true,
     },
-    committerXpubKey: {
+    committeeXpub: {
       type: String,
+      required: [true, "Committee Xpub Key is required."],
       trim: true,
+    },
+    committerXpub: {
+      type: String,
+      required: [true, "Committer Xpub Key is required."],
+      trim: true,
+    },
+    attestationPayload: {
+      type: String,
+      required: [true, "Attestation payload is required."],
+      get: (payload: string) => JSON.parse(payload),
+      set: (payload: any) => JSON.stringify(payload),
+    },
+    derivationPath: {
+      type: String,
+      required: [true, "Derivation path is required."],
+      trim: true,
+    },
+    attestationId: {
+      type: String,
+      required: [true, "Attestation ID is required."],
+      unique: true,
+      trim: true,
+    },
+    committer: {
+      type: String,
+      required: [true, "Committer is required."],
+      trim: true,
+    },
+    committee: {
+      type: String,
+      required: [true, "Committee is required."],
+      trim: true,
+    },
+    commitmentState: {
+      type: String,
+      enum: ["INITIATED", "ACCEPTED", "ACKNOWLEDGED", "DISCHARGED"],
+      default: "INITIATED",
+      required: [true, "Commitment state is required."],
     },
     createdAt: {
       type: Date,
@@ -95,21 +111,19 @@ const commitmentSchema = new Schema<CommitmentDocument>(
   },
   {
     timestamps: true,
+    toJSON: { getters: true }, // Enable getters for JSON responses
+    toObject: { getters: true }, // Enable getters for objects
   }
 );
 
 // Compound unique index to prevent duplicate commitments
 commitmentSchema.index(
   {
-    committee: 1,
-    committer: 1,
-    "assetPayload.assetName": 1,
-    "assetPayload.quantity": 1,
+    committeeId: 1,
+    committerId: 1,
+    attestationId: 1,
   },
   { unique: true }
 );
 
-export const Commitment = model<CommitmentDocument>(
-  "Commitment",
-  commitmentSchema
-);
+export const Commitment = model<ICommitment>("Commitment", commitmentSchema);

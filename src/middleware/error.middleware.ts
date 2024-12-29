@@ -1,22 +1,19 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuthError } from '../utils/errors';
-import { logger } from '../utils/logger';
+import { Request, Response, NextFunction } from "express";
 
 export const errorHandler = (
-  err: Error,
+  error: any,
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
-  logger.error(err);
+) => {
+  const statusCode = error.statusCode || 500;
 
-  if (err instanceof AuthError) {
-    res.status(err.status).json({
-      message: err.message,
-      ...(err.errors && { errors: err.errors })
-    });
-    return;
-  }
+  res.status(statusCode).json({
+    success: false,
+    message: error.message || "Internal Server Error",
+    details: error.errors || null,
+    stack: process.env.NODE_ENV === "development" ? error.stack : undefined, // Show stack trace only in development
+  });
 
-  res.status(500).json({ message: 'Internal server error' });
+  next();
 };
